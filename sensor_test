@@ -3,118 +3,245 @@
 
 #include "Adafruit_VL53L0X.h"
 
-// address we will assign if dual sensor is present
-#define LOX1_ADDRESS 0x30
-#define LOX2_ADDRESS 0x31
-int sensor1,sensor2;
+// импорт и объявление датчика расстояния vl53l0x.
+
+#define RIGHT_VL53_ADDRESS 0x54
+#define LEFT_VL53_ADDRESS 0x41
+#define FORWARD_VL53_ADDRESS 0x42
+#define BACKWARD_VL53_ADDRESS 0x93
+
+#define SIDE_RIGHT_VL53_ADDRESS 0x44
+#define SIDE_LEFT_VL53_ADDRESS 0x45
+
+#define SHT_VL53_RIGHT 50
+#define SHT_VL53_LEFT 53
+#define SHT_VL53_FORWARD 51
+#define SHT_VL53_BACKWARD 41
+
+#define SHT_VL53_SIDE_RIGHT 49
+#define SHT_VL53_SIDE_LEFT 52
 
 
-// set the pins to shutdown
-#define SHT_LOX1 7
-#define SHT_LOX2 6
-
-// objects for the vl53l0x
-Adafruit_VL53L0X lox1 = Adafruit_VL53L0X();
-Adafruit_VL53L0X lox2 = Adafruit_VL53L0X();
-
-// this holds the measurement
 VL53L0X_RangingMeasurementData_t measure1;
-VL53L0X_RangingMeasurementData_t measure2;
+VL53L0X_RangingMeasurementData_t measure2; 
+VL53L0X_RangingMeasurementData_t measure3;
+VL53L0X_RangingMeasurementData_t measure4;
+VL53L0X_RangingMeasurementData_t measure5;
+VL53L0X_RangingMeasurementData_t measure6;
 
-/*
-    Reset all sensors by setting all of their XSHUT pins low for delay(10), then set all XSHUT high to bring out of reset
-    Keep sensor #1 awake by keeping XSHUT pin high
-    Put all other sensors into shutdown by pulling XSHUT pins low
-    Initialize sensor #1 with lox.begin(new_i2c_address) Pick any number but 0x29 and it must be under 0x7F. Going with 0x30 to 0x3F is probably OK.
-    Keep sensor #1 awake, and now bring sensor #2 out of reset by setting its XSHUT pin high.
-    Initialize sensor #2 with lox.begin(new_i2c_address) Pick any number but 0x29 and whatever you set the first sensor to
- */
+Adafruit_VL53L0X right_VL53 = Adafruit_VL53L0X();
+Adafruit_VL53L0X left_VL53 = Adafruit_VL53L0X();
+
+Adafruit_VL53L0X forward_VL53 = Adafruit_VL53L0X();
+Adafruit_VL53L0X backward_VL53 = Adafruit_VL53L0X();
+Adafruit_VL53L0X side_right_VL53 = Adafruit_VL53L0X();
+Adafruit_VL53L0X side_left_VL53 = Adafruit_VL53L0X();
+
+
+// !!! НЕ ТРОГАТЬ !!! добавляем id vl53l0x
 void setID() {
-  // all reset
-  digitalWrite(SHT_LOX1, LOW);    
-  digitalWrite(SHT_LOX2, LOW);
-  delay(10);
-  // all unreset
-  digitalWrite(SHT_LOX1, HIGH);
-  digitalWrite(SHT_LOX2, HIGH);
-  delay(10);
+    // all reset
+    digitalWrite(SHT_VL53_RIGHT, LOW);    
+    digitalWrite(SHT_VL53_LEFT, LOW);
+    digitalWrite(SHT_VL53_FORWARD, LOW);
+    digitalWrite(SHT_VL53_BACKWARD, LOW);
+    digitalWrite(SHT_VL53_SIDE_LEFT, LOW);
+    digitalWrite(SHT_VL53_SIDE_RIGHT, LOW);
+    delay(10);
+    // all unreset
+    digitalWrite(SHT_VL53_RIGHT, HIGH);
+    digitalWrite(SHT_VL53_LEFT, HIGH);
+    digitalWrite(SHT_VL53_FORWARD, HIGH);
+    digitalWrite(SHT_VL53_BACKWARD, HIGH);
+    digitalWrite(SHT_VL53_SIDE_LEFT, HIGH);
+    digitalWrite(SHT_VL53_SIDE_RIGHT, HIGH);
+    delay(10);
 
-  // activating LOX1 and reseting LOX2
-  digitalWrite(SHT_LOX1, HIGH);
-  digitalWrite(SHT_LOX2, LOW);
+    // activating LOX1 and resetting LOX2
+    digitalWrite(SHT_VL53_RIGHT, HIGH);
+    digitalWrite(SHT_VL53_LEFT, LOW);
+    digitalWrite(SHT_VL53_FORWARD, LOW);
+    digitalWrite(SHT_VL53_BACKWARD, LOW);
+    digitalWrite(SHT_VL53_SIDE_LEFT, LOW);
+    digitalWrite(SHT_VL53_SIDE_RIGHT, LOW);
 
-  // initing LOX1
-  if(!lox1.begin(LOX1_ADDRESS)) {
-    Serial.println(F("Failed to boot first VL53L0X"));
-    while(1);
-  }
-  delay(10);
+    // initing LOX1
+    if(!right_VL53.begin(RIGHT_VL53_ADDRESS)) {
+        Serial.println(F("Failed to boot 1 VL53L0X"));
+        //while(1);
+    }
+    delay(10);
 
-  // activating LOX2
-  digitalWrite(SHT_LOX2, HIGH);
-  delay(10);
+    // activating LOX2
+    digitalWrite(SHT_VL53_LEFT, HIGH);
+    delay(10);
 
-  //initing LOX2
-  if(!lox2.begin(LOX2_ADDRESS)) {
-    Serial.println(F("Failed to boot second VL53L0X"));
-    while(1);
-  }
+    //initing LOX2
+    if(!left_VL53.begin(LEFT_VL53_ADDRESS)) {
+        Serial.println(F("Failed to boot 2 VL53L0X"));
+        //while(1);
+    }
+
+
+    // activating LOX3
+    digitalWrite(SHT_VL53_FORWARD, HIGH);
+    delay(10);
+
+    //initing LOX3
+    if(!forward_VL53.begin(FORWARD_VL53_ADDRESS)) {
+        Serial.println(F("Failed to boot 3 VL53L0X"));
+        //while(1);
+    }
+
+    // activating LOX4
+    digitalWrite(SHT_VL53_BACKWARD, HIGH);
+    delay(10);
+
+    //initing LOX4
+    // if(!backward_VL53.begin(SHT_VL53_BACKWARD)) {
+    //     Serial.println(F("Failed to boot 4 VL53L0X"));
+    //     //while(1);
+    // }
+
+    // activating LOX5
+    digitalWrite(SHT_VL53_SIDE_LEFT, HIGH);
+    delay(10);
+
+    //initing LOX5
+    if(!side_left_VL53.begin(SHT_VL53_SIDE_LEFT)) {
+        Serial.println(F("Failed to boot 5 VL53L0X"));
+        //while(1);
+    }
+
+    // activating LOX6
+    digitalWrite(SHT_VL53_SIDE_RIGHT, HIGH);
+    delay(10);
+
+    //initing LOX6
+    if(!side_right_VL53.begin(SHT_VL53_SIDE_RIGHT)) {
+        Serial.println(F("Failed to boot 6 VL53L0X"));
+        //while(1);
+    }
 }
 
-void read_dual_sensors() {
+// !!! НЕ ТРОГАТЬ !!! ДЛЯ ТЕСТОВ !!! считывание и вывод информации с датчиков расстояния
+void read_three_sensors() {
   
-  lox1.rangingTest(&measure1, false); // pass in 'true' to get debug data printout!
-  lox2.rangingTest(&measure2, false); // pass in 'true' to get debug data printout!
+    right_VL53.rangingTest(&measure1, false); // pass in 'true' to get debug data printout!
+    left_VL53.rangingTest(&measure2, false); // pass in 'true' to get debug data printout!
+    forward_VL53.rangingTest(&measure3, false); // pass in 'true' to get debug data printout!
+    // backward_VL53.rangingTest(&measure4, false); // pass in 'true' to get debug data printout!
+    side_right_VL53.rangingTest(&measure5, false); // pass in 'true' to get debug data printout!
+    side_left_VL53.rangingTest(&measure6, false); // pass in 'true' to get debug data printout!
 
-  // print sensor one reading
-  Serial.print("1: ");
-  if(measure1.RangeStatus != 4) {     // if not out of range
-    sensor1 = measure1.RangeMilliMeter;    
-    Serial.print(sensor1);
-    Serial.print("mm");    
-  } else {
-    Serial.print("Out of range");
-  }
-  
-  Serial.print(" ");
+    Serial.print(F("Time: "));
+    Serial.print(millis());
+    Serial.print(F(" => "));
 
-  // print sensor two reading
-  Serial.print("2: ");
-  if(measure2.RangeStatus != 4) {
-    sensor2 = measure2.RangeMilliMeter;
-    Serial.print(sensor2);
-    Serial.print("mm");
-  } else {
-    Serial.print("Out of range");
-  }
-  
-  Serial.println();
+    // print sensor one reading
+    Serial.print(F("right: "));
+    if(measure1.RangeStatus != 4) {     // if not out of range
+        Serial.print(measure1.RangeMilliMeter);
+    } else {
+        Serial.print(F("Out of range"));
+    }
+
+    Serial.print(F(" "));
+
+    // print sensor two reading
+    Serial.print(F("left: "));
+    if(measure2.RangeStatus != 4) {
+        Serial.print(measure2.RangeMilliMeter);
+    } else {
+        Serial.print(F("Out of range"));
+    }
+
+    Serial.print(F(" "));
+
+    // print sensor three reading
+    Serial.print(F("forward: "));
+    if(measure3.RangeStatus != 4) {
+        Serial.print(measure3.RangeMilliMeter);
+    } else {
+        Serial.print(F("Out of range"));
+    }
+
+    Serial.print(F(" "));
+
+    // print sensor three reading
+    Serial.print(F("backward: "));
+    if(measure4.RangeStatus != 4) {
+        Serial.print(measure4.RangeMilliMeter);
+    } else {
+        Serial.print(F("Out of range"));
+    }
+
+    Serial.print(F(" "));
+
+    // print sensor three reading
+    Serial.print(F("side right: "));
+    if(measure5.RangeStatus != 4) {
+        Serial.print(measure5.RangeMilliMeter);
+    } else {
+        Serial.print(F("Out of range"));
+    }
+
+    Serial.print(F(" "));
+
+    // print sensor three reading
+    Serial.print(F("side left: "));
+    if(measure6.RangeStatus != 4) {
+        Serial.print(measure6.RangeMilliMeter);
+    } else {
+        Serial.print(F("Out of range"));
+    }
+
+    Serial.println();
+    delay(500);
+}
+
+// !!! НЕ ТРОГАТЬ !!! инициализация датчиков расстояния vl53l0x
+void init_sensors() {
+
+    while (! Serial) { delay(1); }
+
+    pinMode(SHT_VL53_RIGHT, OUTPUT);
+    pinMode(SHT_VL53_LEFT, OUTPUT);
+    pinMode(SHT_VL53_FORWARD, OUTPUT);
+    pinMode(SHT_VL53_SIDE_LEFT, OUTPUT);
+    pinMode(SHT_VL53_SIDE_RIGHT, OUTPUT);
+    // pinMode(SHT_VL53_BACKWARD, OUTPUT);
+
+    Serial.println(F("Shutdown pins inited..."));
+
+    digitalWrite(SHT_VL53_RIGHT, LOW);
+    digitalWrite(SHT_VL53_LEFT, LOW);
+    digitalWrite(SHT_VL53_FORWARD, LOW);
+    digitalWrite(SHT_VL53_SIDE_LEFT, LOW);
+    digitalWrite(SHT_VL53_SIDE_RIGHT, LOW);
+    // digitalWrite(SHT_VL53_BACKWARD, LOW);
+
+    Serial.println(F("All in reset mode...(pins are low)"));
+    Serial.println(F("Starting..."));
+
+    setID();
+
+    right_VL53.startRangeContinuous();
+    left_VL53.startRangeContinuous();
+    forward_VL53.startRangeContinuous();
+    // backward_VL53.startRangeContinuous();
+    side_left_VL53.startRangeContinuous();
+    side_right_VL53.startRangeContinuous();
+
 }
 
 void setup() {
   Serial.begin(115200);
-
-  // wait until serial port opens for native USB devices
-  while (! Serial) { delay(1); }
-
-  pinMode(SHT_LOX1, OUTPUT);
-  pinMode(SHT_LOX2, OUTPUT);
-
-  Serial.println("Shutdown pins inited...");
-
-  digitalWrite(SHT_LOX1, LOW);
-  digitalWrite(SHT_LOX2, LOW);
-
-  Serial.println("Both in reset mode...(pins are low)");
-  
-  
-  Serial.println("Starting...");
-  setID();
- 
+  init_sensors();
 }
 
+
 void loop() {
-   
-  read_dual_sensors();
-  delay(100);
+  read_three_sensors();
+  delay(20);
 }
