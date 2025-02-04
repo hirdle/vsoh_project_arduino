@@ -28,9 +28,8 @@ Servo servo_drive;
 int motor_pin = 2;
 int servo_drive_pin = 3;
 
-
 void setup() {
-  Serial.begin(115200); // Начинаем серийную связь на скорости 115200 бит/с
+  Serial.begin(115200);
 
   motor.attach(motor_pin);
   servo_drive.attach(servo_drive_pin);
@@ -56,24 +55,55 @@ void setup() {
 void loop() {
   if (Serial.available() > 0) {
     String input = Serial.readStringUntil('\n'); // Читаем строку до символа новой строки
-    int angle1, angle2;
+    
+    // Разделяем входные данные по пробелам
+    int params[10]; // Предполагаем, что может быть до 10 параметров
+    int count = 0;
+    
+    // Извлечение параметров из строки
+    char *token = strtok(input.c_str(), " ");
+    while (token != nullptr && count < 10) {
+      params[count++] = atoi(token);
+      token = strtok(nullptr, " ");
+    }
 
-    // Разделяем строку на два значения
-    int separatorIndex = input.indexOf(' ');
-    if (separatorIndex != -1) {
-      // Получаем значения углов
-      angle1 = input.substring(0, separatorIndex).toInt();
-      angle2 = input.substring(separatorIndex + 1).toInt();
-      
-      // Ограничиваем значения углов от 0 до 180
-      angle1 = constrain(angle1, 0, 180);
-      angle2 = constrain(angle2, 0, 180);
+    // Обработка полученных параметров
+    if (count > 0) {
+      // Обработка скорости мотора
+      int motor_speed = constrain(params[0], 1000, 2000); // Ограничиваем скорость мотора
+      motor.writeMicroseconds(motor_speed);
 
-      // Устанавливаем углы для сервомоторов
-      servo_1.write(angle1);
-      servo_2.write(angle2);
-      
-      delay(100);
+      // Обработка серво для управления движением
+      if (count > 1) {
+        int drive_angle = constrain(params[1], 0, 180);
+        servo_drive.writeMicroseconds(map(drive_angle, 0, 180, 1000, 2000)); // Преобразование угла в микросекунды
+      }
+
+      // Обработка дополнительных сервомоторов (серво 1, серво 2 и т.д.)
+      for (int i = 2; i < count; i++) {
+        int servo_angle = constrain(params[i], 0, 180); // Ограничиваем значение от 0 до 180
+        switch (i - 2) { // Начинаем с серво 1
+          case 0:
+            servo_catch.write(servo_angle);
+            break;
+          case 1:
+            servo_rotate_base.write(servo_angle);
+            break;
+          case 2:
+            servo_rotate_catch.write(servo_angle);
+            break;
+          case 3:
+            servo_folding_base.write(servo_angle);
+            break;
+          case 4:
+            servo_folding_catch.write(servo_angle);
+            break;
+          default:
+            break;
+        }
+      }
+
+      delay(100); // Задержка между командами
     }
   }
 }
