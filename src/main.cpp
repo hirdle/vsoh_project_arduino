@@ -1,105 +1,247 @@
 #include "Arduino.h"
-#include "Servo.h"
 
-Servo servo_catch;
-Servo servo_rotate_base;
-Servo servo_rotate_catch;
-Servo servo_folding_base;
-Servo servo_folding_catch;
 
-int servo_catch_pin = 10;
-int servo_rotate_base_pin = 11;
-int servo_rotate_catch_pin = 12;
-int servo_folding_base_pin = 13;
-int servo_folding_catch_pin = 14;
+#include "Adafruit_VL53L0X.h"
 
-int catch_default = 0;
-int rotate_base_default = 0;
-int rotate_catch_default = 0;
-int folding_base_default = 0;
-int folding_catch_default = 0;
+// импорт и объявление датчика расстояния vl53l0x.
 
-int drive_rotate_default = 90;
-int stop_speed = 1500;
+#define RIGHT_VL53_ADDRESS 0x54
+#define LEFT_VL53_ADDRESS 0x41
+#define FORWARD_VL53_ADDRESS 0x42
+#define BACKWARD_VL53_ADDRESS 0x93
 
-Servo motor;
-Servo servo_drive;
+#define SIDE_RIGHT_VL53_ADDRESS 0x44
+#define SIDE_LEFT_VL53_ADDRESS 0x45
 
-int motor_pin = 2;
-int servo_drive_pin = 9;
+#define SHT_VL53_RIGHT 50
+#define SHT_VL53_LEFT 53
+#define SHT_VL53_FORWARD 51
+#define SHT_VL53_BACKWARD 41
+
+#define SHT_VL53_SIDE_RIGHT 49
+#define SHT_VL53_SIDE_LEFT 52
+
+
+VL53L0X_RangingMeasurementData_t measure1;
+VL53L0X_RangingMeasurementData_t measure2; 
+VL53L0X_RangingMeasurementData_t measure3;
+VL53L0X_RangingMeasurementData_t measure4;
+VL53L0X_RangingMeasurementData_t measure5;
+VL53L0X_RangingMeasurementData_t measure6;
+
+Adafruit_VL53L0X right_VL53 = Adafruit_VL53L0X();
+Adafruit_VL53L0X left_VL53 = Adafruit_VL53L0X();
+
+Adafruit_VL53L0X forward_VL53 = Adafruit_VL53L0X();
+Adafruit_VL53L0X backward_VL53 = Adafruit_VL53L0X();
+Adafruit_VL53L0X side_right_VL53 = Adafruit_VL53L0X();
+Adafruit_VL53L0X side_left_VL53 = Adafruit_VL53L0X();
+
+
+// !!! НЕ ТРОГАТЬ !!! добавляем id vl53l0x
+void setID() {
+    // all reset
+    digitalWrite(SHT_VL53_RIGHT, LOW);    
+    digitalWrite(SHT_VL53_LEFT, LOW);
+    digitalWrite(SHT_VL53_FORWARD, LOW);
+    digitalWrite(SHT_VL53_BACKWARD, LOW);
+    digitalWrite(SHT_VL53_SIDE_LEFT, LOW);
+    digitalWrite(SHT_VL53_SIDE_RIGHT, LOW);
+    delay(10);
+    // all unreset
+    digitalWrite(SHT_VL53_RIGHT, HIGH);
+    digitalWrite(SHT_VL53_LEFT, HIGH);
+    digitalWrite(SHT_VL53_FORWARD, HIGH);
+    digitalWrite(SHT_VL53_BACKWARD, HIGH);
+    digitalWrite(SHT_VL53_SIDE_LEFT, HIGH);
+    digitalWrite(SHT_VL53_SIDE_RIGHT, HIGH);
+    delay(10);
+
+    // activating LOX1 and resetting LOX2
+    digitalWrite(SHT_VL53_RIGHT, HIGH);
+    digitalWrite(SHT_VL53_LEFT, LOW);
+    digitalWrite(SHT_VL53_FORWARD, LOW);
+    digitalWrite(SHT_VL53_BACKWARD, LOW);
+    digitalWrite(SHT_VL53_SIDE_LEFT, LOW);
+    digitalWrite(SHT_VL53_SIDE_RIGHT, LOW);
+
+    // initing LOX1
+    if(!right_VL53.begin(RIGHT_VL53_ADDRESS)) {
+        Serial.println(F("Failed to boot 1 VL53L0X"));
+        //while(1);
+    }
+    delay(10);
+
+    // activating LOX2
+    digitalWrite(SHT_VL53_LEFT, HIGH);
+    delay(10);
+
+    //initing LOX2
+    if(!left_VL53.begin(LEFT_VL53_ADDRESS)) {
+        Serial.println(F("Failed to boot 2 VL53L0X"));
+        //while(1);
+    }
+
+
+    // activating LOX3
+    digitalWrite(SHT_VL53_FORWARD, HIGH);
+    delay(10);
+
+    //initing LOX3
+    if(!forward_VL53.begin(FORWARD_VL53_ADDRESS)) {
+        Serial.println(F("Failed to boot 3 VL53L0X"));
+        //while(1);
+    }
+
+    // activating LOX4
+    digitalWrite(SHT_VL53_BACKWARD, HIGH);
+    delay(10);
+
+    //initing LOX4
+    // if(!backward_VL53.begin(SHT_VL53_BACKWARD)) {
+    //     Serial.println(F("Failed to boot 4 VL53L0X"));
+    //     //while(1);
+    // }
+
+    // activating LOX5
+    digitalWrite(SHT_VL53_SIDE_LEFT, HIGH);
+    delay(10);
+
+    //initing LOX5
+    if(!side_left_VL53.begin(SHT_VL53_SIDE_LEFT)) {
+        Serial.println(F("Failed to boot 5 VL53L0X"));
+        //while(1);
+    }
+
+    // activating LOX6
+    digitalWrite(SHT_VL53_SIDE_RIGHT, HIGH);
+    delay(10);
+
+    //initing LOX6
+    if(!side_right_VL53.begin(SHT_VL53_SIDE_RIGHT)) {
+        Serial.println(F("Failed to boot 6 VL53L0X"));
+        //while(1);
+    }
+}
+
+// !!! НЕ ТРОГАТЬ !!! ДЛЯ ТЕСТОВ !!! считывание и вывод информации с датчиков расстояния
+void read_three_sensors() {
+  
+    right_VL53.rangingTest(&measure1, false); // pass in 'true' to get debug data printout!
+    left_VL53.rangingTest(&measure2, false); // pass in 'true' to get debug data printout!
+    forward_VL53.rangingTest(&measure3, false); // pass in 'true' to get debug data printout!
+    // backward_VL53.rangingTest(&measure4, false); // pass in 'true' to get debug data printout!
+    side_right_VL53.rangingTest(&measure5, false); // pass in 'true' to get debug data printout!
+    side_left_VL53.rangingTest(&measure6, false); // pass in 'true' to get debug data printout!
+
+    Serial.print(F("Time: "));
+    Serial.print(millis());
+    Serial.print(F(" => "));
+
+    // print sensor one reading
+    Serial.print(F("right: "));
+    if(measure1.RangeStatus != 4) {     // if not out of range
+        Serial.print(measure1.RangeMilliMeter);
+    } else {
+        Serial.print(F("Out of range"));
+    }
+
+    Serial.print(F(" "));
+
+    // print sensor two reading
+    Serial.print(F("left: "));
+    if(measure2.RangeStatus != 4) {
+        Serial.print(measure2.RangeMilliMeter);
+    } else {
+        Serial.print(F("Out of range"));
+    }
+
+    Serial.print(F(" "));
+
+    // print sensor three reading
+    Serial.print(F("forward: "));
+    if(measure3.RangeStatus != 4) {
+        Serial.print(measure3.RangeMilliMeter);
+    } else {
+        Serial.print(F("Out of range"));
+    }
+
+    Serial.print(F(" "));
+
+    // print sensor three reading
+    Serial.print(F("backward: "));
+    if(measure4.RangeStatus != 4) {
+        Serial.print(measure4.RangeMilliMeter);
+    } else {
+        Serial.print(F("Out of range"));
+    }
+
+    Serial.print(F(" "));
+
+    // print sensor three reading
+    Serial.print(F("side right: "));
+    if(measure5.RangeStatus != 4) {
+        Serial.print(measure5.RangeMilliMeter);
+    } else {
+        Serial.print(F("Out of range"));
+    }
+
+    Serial.print(F(" "));
+
+    // print sensor three reading
+    Serial.print(F("side left: "));
+    if(measure6.RangeStatus != 4) {
+        Serial.print(measure6.RangeMilliMeter);
+    } else {
+        Serial.print(F("Out of range"));
+    }
+
+    Serial.println();
+    delay(500);
+}
+
+// !!! НЕ ТРОГАТЬ !!! инициализация датчиков расстояния vl53l0x
+void init_sensors() {
+
+    while (! Serial) { delay(1); }
+
+    pinMode(SHT_VL53_RIGHT, OUTPUT);
+    pinMode(SHT_VL53_LEFT, OUTPUT);
+    pinMode(SHT_VL53_FORWARD, OUTPUT);
+    pinMode(SHT_VL53_SIDE_LEFT, OUTPUT);
+    pinMode(SHT_VL53_SIDE_RIGHT, OUTPUT);
+    // pinMode(SHT_VL53_BACKWARD, OUTPUT);
+
+    Serial.println(F("Shutdown pins inited..."));
+
+    digitalWrite(SHT_VL53_RIGHT, LOW);
+    digitalWrite(SHT_VL53_LEFT, LOW);
+    digitalWrite(SHT_VL53_FORWARD, LOW);
+    digitalWrite(SHT_VL53_SIDE_LEFT, LOW);
+    digitalWrite(SHT_VL53_SIDE_RIGHT, LOW);
+    // digitalWrite(SHT_VL53_BACKWARD, LOW);
+
+    Serial.println(F("All in reset mode...(pins are low)"));
+    Serial.println(F("Starting..."));
+
+    setID();
+
+    right_VL53.startRangeContinuous();
+    left_VL53.startRangeContinuous();
+    forward_VL53.startRangeContinuous();
+    // backward_VL53.startRangeContinuous();
+    side_left_VL53.startRangeContinuous();
+    side_right_VL53.startRangeContinuous();
+
+}
 
 void setup() {
   Serial.begin(115200);
-
-  motor.attach(motor_pin);
-  servo_drive.attach(servo_drive_pin);
-
-  motor.writeMicroseconds(stop_speed);
-  servo_drive.write(drive_rotate_default);
-
-  servo_catch.attach(servo_catch_pin);
-  servo_rotate_base.attach(servo_rotate_base_pin);
-  servo_rotate_catch.attach(servo_rotate_catch_pin);
-  servo_folding_base.attach(servo_folding_base_pin);
-  servo_folding_catch.attach(servo_folding_catch_pin);
-
-  servo_catch.write(catch_default);
-  servo_rotate_base.write(rotate_base_default);
-  servo_rotate_catch.write(rotate_catch_default);
-  servo_folding_base.write(folding_base_default);
-  servo_folding_catch.write(folding_catch_default);
-
-  delay(500);
+  init_sensors();
 }
 
+
 void loop() {
-  if (Serial.available() > 0) {
-    String input = Serial.readStringUntil('\n'); // Читаем строку до символа новой строки
-    
-    // Разделяем входные данные по пробелам
-    int params[10]; // Предполагаем, что может быть до 10 параметров
-    int count = 0;
-    
-    // Извлечение параметров из строки
-    char *token = strtok(input.c_str(), " ");
-    while (token != nullptr && count < 10) {
-      params[count++] = atoi(token);
-      token = strtok(nullptr, " ");
-    }
-
-    // Обработка полученных параметров
-    if (count > 0) {
-      // Обработка скорости мотора
-      int motor_speed = constrain(params[0], 1000, 2000); // Ограничиваем скорость мотора
-      motor.writeMicroseconds(motor_speed);
-
-      servo_drive.write(constrain(params[1], 0, 180)); // Преобразование угла в микросекунды
-      
-      // Обработка дополнительных сервомоторов (серво 1, серво 2 и т.д.)
-      for (int i = 2; i < count; i++) {
-        int servo_angle = constrain(params[i], 0, 180); // Ограничиваем значение от 0 до 180
-        switch (i - 2) { // Начинаем с серво 1
-          case 0:
-            servo_catch.write(servo_angle);
-            break;
-          case 1:
-            servo_rotate_base.write(servo_angle);
-            break;
-          case 2:
-            servo_rotate_catch.write(servo_angle);
-            break;
-          case 3:
-            servo_folding_base.write(servo_angle);
-            break;
-          case 4:
-            servo_folding_catch.write(servo_angle);
-            break;
-          default:
-            break;
-        }
-      }
-
-      delay(100); // Задержка между командами
-    }
-  }
+  read_three_sensors();
+  delay(20);
 }
