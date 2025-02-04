@@ -7,11 +7,11 @@ Servo servo_rotate_catch;
 Servo servo_folding_base;
 Servo servo_folding_catch;
 
-int servo_catch_pin = 9;
-int servo_rotate_base_pin = 10;
-int servo_rotate_catch_pin = 11;
-int servo_folding_base_pin = 12;
-int servo_folding_catch_pin = 13;
+int servo_catch_pin = 10;
+int servo_rotate_base_pin = 11;
+int servo_rotate_catch_pin = 12;
+int servo_folding_base_pin = 13;
+int servo_folding_catch_pin = 14;
 
 int catch_default = 0;
 int rotate_base_default = 0;
@@ -26,7 +26,7 @@ Servo motor;
 Servo servo_drive;
 
 int motor_pin = 2;
-int servo_drive_pin = 3;
+int servo_drive_pin = 9;
 
 void setup() {
   Serial.begin(115200);
@@ -35,7 +35,7 @@ void setup() {
   servo_drive.attach(servo_drive_pin);
 
   motor.writeMicroseconds(stop_speed);
-  servo_drive.writeMicroseconds(drive_rotate_default);
+  servo_drive.write(drive_rotate_default);
 
   servo_catch.attach(servo_catch_pin);
   servo_rotate_base.attach(servo_rotate_base_pin);
@@ -73,12 +73,8 @@ void loop() {
       int motor_speed = constrain(params[0], 1000, 2000); // Ограничиваем скорость мотора
       motor.writeMicroseconds(motor_speed);
 
-      // Обработка серво для управления движением
-      if (count > 1) {
-        int drive_angle = constrain(params[1], 0, 180);
-        servo_drive.writeMicroseconds(map(drive_angle, 0, 180, 1000, 2000)); // Преобразование угла в микросекунды
-      }
-
+      servo_drive.write(constrain(params[1], 0, 180)); // Преобразование угла в микросекунды
+      
       // Обработка дополнительных сервомоторов (серво 1, серво 2 и т.д.)
       for (int i = 2; i < count; i++) {
         int servo_angle = constrain(params[i], 0, 180); // Ограничиваем значение от 0 до 180
