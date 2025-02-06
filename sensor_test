@@ -5,13 +5,13 @@
 
 // импорт и объявление датчика расстояния vl53l0x.
 
-#define RIGHT_VL53_ADDRESS 0x54
+#define RIGHT_VL53_ADDRESS 0x56
 #define LEFT_VL53_ADDRESS 0x41
 #define FORWARD_VL53_ADDRESS 0x42
 #define BACKWARD_VL53_ADDRESS 0x93
 
 #define SIDE_RIGHT_VL53_ADDRESS 0x44
-#define SIDE_LEFT_VL53_ADDRESS 0x45
+#define SIDE_LEFT_VL53_ADDRESS 0x40
 
 #define SHT_VL53_RIGHT 50
 #define SHT_VL53_LEFT 53
