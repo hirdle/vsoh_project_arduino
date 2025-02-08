@@ -1,4 +1,3 @@
-
 // !!! НЕ ТРОГАТЬ !!! добавляем id vl53l0x
 void setID() {
     // all reset
@@ -29,7 +28,7 @@ void setID() {
     // initing LOX1
     if(!right_VL53.begin(RIGHT_VL53_ADDRESS)) {
         Serial.println(F("Failed to boot 1 VL53L0X"));
-        while(1);
+        //while(1);
     }
     delay(10);
 
@@ -40,7 +39,7 @@ void setID() {
     //initing LOX2
     if(!left_VL53.begin(LEFT_VL53_ADDRESS)) {
         Serial.println(F("Failed to boot 2 VL53L0X"));
-        while(1);
+        //while(1);
     }
 
 
@@ -51,7 +50,7 @@ void setID() {
     //initing LOX3
     if(!forward_VL53.begin(FORWARD_VL53_ADDRESS)) {
         Serial.println(F("Failed to boot 3 VL53L0X"));
-        while(1);
+        //while(1);
     }
 
     // activating LOX4
@@ -59,10 +58,10 @@ void setID() {
     delay(10);
 
     //initing LOX4
-    if(!backward_VL53.begin(SHT_VL53_BACKWARD)) {
-        Serial.println(F("Failed to boot 4 VL53L0X"));
-        // while(1);
-    }
+    // if(!backward_VL53.begin(SHT_VL53_BACKWARD)) {
+    //     Serial.println(F("Failed to boot 4 VL53L0X"));
+    //     //while(1);
+    // }
 
     // activating LOX5
     digitalWrite(SHT_VL53_SIDE_LEFT, HIGH);
@@ -71,7 +70,7 @@ void setID() {
     //initing LOX5
     if(!side_left_VL53.begin(SHT_VL53_SIDE_LEFT)) {
         Serial.println(F("Failed to boot 5 VL53L0X"));
-        while(1);
+        //while(1);
     }
 
     // activating LOX6
@@ -81,7 +80,7 @@ void setID() {
     //initing LOX6
     if(!side_right_VL53.begin(SHT_VL53_SIDE_RIGHT)) {
         Serial.println(F("Failed to boot 6 VL53L0X"));
-        while(1);
+        //while(1);
     }
 }
 
@@ -91,7 +90,7 @@ void read_three_sensors() {
     right_VL53.rangingTest(&measure1, false); // pass in 'true' to get debug data printout!
     left_VL53.rangingTest(&measure2, false); // pass in 'true' to get debug data printout!
     forward_VL53.rangingTest(&measure3, false); // pass in 'true' to get debug data printout!
-    backward_VL53.rangingTest(&measure4, false); // pass in 'true' to get debug data printout!
+    // backward_VL53.rangingTest(&measure4, false); // pass in 'true' to get debug data printout!
     side_right_VL53.rangingTest(&measure5, false); // pass in 'true' to get debug data printout!
     side_left_VL53.rangingTest(&measure6, false); // pass in 'true' to get debug data printout!
 
@@ -164,11 +163,6 @@ void read_three_sensors() {
 // !!! НЕ ТРОГАТЬ !!! инициализация датчиков расстояния vl53l0x
 void init_sensors() {
 
-    pinMode(IR_sensor_1, INPUT);
-    pinMode(IR_sensor_2, INPUT);
-    pinMode(IR_sensor_3, INPUT);
-    pinMode(IR_sensor_4, INPUT);
-
     while (! Serial) { delay(1); }
 
     pinMode(SHT_VL53_RIGHT, OUTPUT);
@@ -176,7 +170,7 @@ void init_sensors() {
     pinMode(SHT_VL53_FORWARD, OUTPUT);
     pinMode(SHT_VL53_SIDE_LEFT, OUTPUT);
     pinMode(SHT_VL53_SIDE_RIGHT, OUTPUT);
-    pinMode(SHT_VL53_BACKWARD, OUTPUT);
+    // pinMode(SHT_VL53_BACKWARD, OUTPUT);
 
     Serial.println(F("Shutdown pins inited..."));
 
@@ -185,7 +179,7 @@ void init_sensors() {
     digitalWrite(SHT_VL53_FORWARD, LOW);
     digitalWrite(SHT_VL53_SIDE_LEFT, LOW);
     digitalWrite(SHT_VL53_SIDE_RIGHT, LOW);
-    digitalWrite(SHT_VL53_BACKWARD, LOW);
+    // digitalWrite(SHT_VL53_BACKWARD, LOW);
 
     Serial.println(F("All in reset mode...(pins are low)"));
     Serial.println(F("Starting..."));
@@ -195,18 +189,8 @@ void init_sensors() {
     right_VL53.startRangeContinuous();
     left_VL53.startRangeContinuous();
     forward_VL53.startRangeContinuous();
-    backward_VL53.startRangeContinuous();
+    // backward_VL53.startRangeContinuous();
     side_left_VL53.startRangeContinuous();
     side_right_VL53.startRangeContinuous();
 
-}
-
-
-
-// функция для ограничения угла поворота, значений датчиков
-int range_limits(int input_data, int min, int max) {
-    if (input_data > max) input_data = max;
-    if (input_data < min) input_data = min;
-
-    return input_data;
 }
