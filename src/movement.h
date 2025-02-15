@@ -18,6 +18,14 @@ void setServoAngle(uint8_t servoId, int angle) {
   pwm.setPWM(servoId, 0, pulse);
 }
 
+
+void disableAllMotors() {
+  for (int i = 0; i < 4; i++) {
+    pwm.setPWM(i, 0, 0);  // Устанавливаем длительность импульса в 0 для каждого мотора
+  }
+//   Serial.println("All motors disabled.");
+}
+
 void init_manipulator() {
     pwm.begin();
     pwm.setPWMFreq(50); 
@@ -26,6 +34,7 @@ void init_manipulator() {
     setServoAngle(servo_rotate_base_id, rotate_base_default);
     setServoAngle(servo_folding_base_id, folding_base_default);
     setServoAngle(servo_folding_catch_id, folding_catch_default);
+    disableAllMotors();
 }
 
 // отъезд назад

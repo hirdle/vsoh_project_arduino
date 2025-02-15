@@ -7,6 +7,8 @@
 int mode_obj = 0;
 int curr_step = 0;
 
+int automatic_mode = 0;
+
 // 1 - увидели и поварачиваем налево
 // 2 - переехали и едем вдоль объекта
 // 3 - проехали обратно
@@ -44,14 +46,18 @@ void loop() {
     switch (data[5])
     {
     case 0:
+      disableAllMotors(); 
       Serial.println("stop");
       stop();
+      automatic_mode = 0;
       break;
     case 1:
+      disableAllMotors(); 
+      automatic_mode = 0;
       // Serial.println("control motors");
       servo.write(map(data[3], 0, 1023, 45, 135));
       if (y > 0) {
-        motor.writeMicroseconds(map(y, 0, 523, 1570, 1590));
+        motor.writeMicroseconds(map(y, 0, 523, 1580, 1620));
         back = 0;
       } else if (y < 0) {
         // if (!back) {
@@ -62,7 +68,7 @@ void loop() {
         // }
         // back = 1;
         
-        motor.writeMicroseconds(map(y, 0, 523, 1370, 1400));
+        motor.writeMicroseconds(map(y, 0, 523, 1350, 1480));
 
       } else {
         stop();
@@ -70,6 +76,7 @@ void loop() {
       break;
     case 2:
     //   Serial.println("control manipulator");
+      automatic_mode = 0;
       
       rotate_base_pos = limits(rotate_base_pos + x / 50, 0, 180);
       setServoAngle(servo_rotate_base_id, rotate_base_pos);
@@ -80,7 +87,72 @@ void loop() {
       delay(50);
       break;
     case 3:
-      Serial.println("automatic");
+      disableAllMotors(); 
+      if (y>300){
+        automatic_mode = 1;
+      }
+
+      if (automatic_mode) {
+        int distance_forward = forward_VL53.readRange() / 10; // forward
+        int distance_right = right_VL53.readRange() / 10; // right
+        int distance_left = left_VL53.readRange() / 10; // left
+        int distance_side_left = side_left_VL53.readRange() / 10; // side left
+        int distance_side_right = side_right_VL53.readRange() / 10; // side right
+
+        if (!mode_obj) {
+          // read_three_sensors();
+            servo.write(90);
+            motor.writeMicroseconds(forward_speed);        
+
+            if (distance_forward < 80) mode_obj = 1; curr_step = 1;
+            // stop(); 
+        } 
+        else {
+            // stop();
+            servo.write(45);
+            // while(distance_right < 60){}
+            delay(550);
+            
+            servo.write(115);
+            delay(600);
+            mode_obj = 1;
+            // stop();
+            // delay(10100000000000);
+            // while (distance_right < 100) {
+            //     motor.writeMicroseconds(forward_speed); 
+            // }
+            // // delay(500);
+            // stop();
+            // delay(100000000);
+            // servo.write(110);
+            // delay(1000);
+            // // servo.write(90);
+            // // delay(3000);
+            // mode_obj = 0;
+            // curr_step = 0;
+            // stop();
+            // delay(1000000000000000000);
+        }
+        // else {
+        //     if (curr_step == 1) {
+        //         stop();
+        //         while (distance_right < 90) {
+        //             servo.write(45);
+        //             motor.writeMicroseconds(forward_speed); 
+        //         }
+        //         delay(150);
+        //         stop();
+        //         curr_step = 2;
+        //     } else if (curr_step == 2) {
+        //         stop();
+        //         servo.write(135);
+        //         motor.writeMicroseconds(forward_speed); 
+        //         delay(1500);
+        //         stop();
+        //     }
+        // }
+      }
+
       break;
     }
     lastPing = millis();

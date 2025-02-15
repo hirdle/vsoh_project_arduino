@@ -79,7 +79,7 @@ int max_distance = 100;
 
 // базовые значения скоростей
 
-int forward_speed = 1580;
+int forward_speed = 1600;
 int line_speed = 1575;
 int backward_speed = 1345;
 int stop_speed = 1495;
